@@ -5,6 +5,7 @@ doble :: Number -> Number
 doble numero = numero + numero
 
 -------------- Parcial CraftMine --------------
+{-
 data Personaje = UnPersonaje {
     nombre :: String,
     puntaje :: Number,
@@ -130,4 +131,120 @@ desierto = UnBioma "palo" (repeat "arena")
 -- Analizando con el personaje Fran y la herramienta pala explota el programa
 -- Punto 3 --
 
+-}
 -------------- Parcial CraftMine --------------
+
+-------------- Parcial Star Wars: Haskell Espacial --------------
+data Nave = UnaNave {
+    nombre :: String,
+    durabilidad :: Number,
+    escudo :: Number,
+    ataque :: Number,
+    poder :: Nave -> Nave
+} deriving Show
+
+ataqueCambio :: Number -> Nave -> Nave
+ataqueCambio ataq nave
+    | ataq > negate (ataque nave) = nave {ataque = ataque nave + ataq}
+    | otherwise = nave {ataque = 0}
+
+movTurbo :: Nave -> Nave
+movTurbo = ataqueCambio 25 
+
+repEmergencia :: Nave -> Nave
+repEmergencia nave = ataqueCambio (-30) (durabilidadCambio 50 nave)
+
+durabilidadCambio :: Number -> Nave -> Nave
+durabilidadCambio dur nave
+    | dur > negate (durabilidad nave) = nave {durabilidad = durabilidad nave + dur}
+    | otherwise = nave {durabilidad = 0}
+
+escudoCambio :: Number -> Nave -> Nave
+escudoCambio esc nave
+    | esc > negate (escudo nave) = nave {escudo = escudo nave + esc}
+    | otherwise = nave {escudo = 0}
+
+cazaTIE = UnaNave "Tie Fighter" 200 100 50 cazaTIEPoder
+cazaTIEPoder :: Nave -> Nave
+cazaTIEPoder = movTurbo
+
+xWing = UnaNave "X Wing" 300 150 100 xWingPoder
+xWingPoder :: Nave -> Nave
+xWingPoder = repEmergencia
+
+darthVader = UnaNave "Nave de Darth Vader" 500 300 200 darthVaderPoder
+darthVaderPoder :: Nave -> Nave
+darthVaderPoder darthVader = durabilidadCambio (-45) (movTurbo (movTurbo (movTurbo darthVader)))
+
+halconMilenario = UnaNave "Millennium Falcon" 1000 500 50 halconPoder
+halconPoder :: Nave -> Nave
+halconPoder halcon = escudoCambio 100 (repEmergencia halcon)
+
+-- Punto 1 --
+bobaFett = UnaNave "Boba Fett" 600 350 275 bobaPoder
+bobaPoder :: Nave -> Nave
+bobaPoder boba = escudoCambio (-300) (ataqueCambio 225 boba)
+-- Punto 1 --
+
+-- Punto 2 --
+flotaImperial :: [Nave]
+flotaImperial = [cazaTIE, cazaTIE, cazaTIE, darthVader]
+flotaRebelde :: [Nave]
+flotaRebelde = [xWing, xWing, xWing, halconMilenario]
+
+durabilidadTotal :: [Nave] -> Number
+durabilidadTotal flota = sum (map durabilidad flota)
+-- Punto 2 --
+
+-- Punto 3 --
+ataqueNave :: Nave -> Nave -> Nave
+ataqueNave atacante defensor
+    | ataque (poder atacante atacante) < escudo (poder defensor defensor) = ataqueEscudo atacante defensor
+    | otherwise = durabilidadCambio (diferenciaEscudo atacante defensor) (ataqueEscudo atacante defensor)
+
+diferenciaEscudo :: Nave -> Nave -> Number
+diferenciaEscudo atacante defensor = negate (ataque(poder atacante atacante) - escudo (poder defensor defensor))
+
+ataqueEscudo :: Nave -> Nave -> Nave
+ataqueEscudo atacante defensor = escudoCambio (negate (ataque (poder atacante atacante))) (poder defensor defensor)
+-- Punto 3 --
+
+-- Punto 4 --
+fueraDeCombate :: Nave -> Nave -> Bool
+fueraDeCombate atacante defensor = durabilidad (ataqueNave atacante defensor) == 0
+-- Punto 4 --
+
+-- Punto 5 --
+type Estrategia = Nave -> Bool
+
+navesDebiles :: Estrategia 
+navesDebiles defensor = 200 > escudo defensor
+
+navesConCiertaPeligrosidad :: Number -> Estrategia
+navesConCiertaPeligrosidad peligrosidad defensor = peligrosidad < ataque defensor
+
+navesFueraDeCombate :: Nave -> Estrategia
+navesFueraDeCombate = fueraDeCombate 
+
+navesDebiles' :: Estrategia
+navesDebiles' defensor = 300 >= durabilidad defensor
+
+misionSorpresa :: Estrategia -> Nave -> [Nave] -> [Nave]
+misionSorpresa estrategia atacante flota = map (ataqueNave atacante) (filter estrategia flota)
+-- Punto 5 --
+
+-- Punto 6 --
+mejorEstrategia :: Estrategia -> Estrategia -> Nave -> [Nave] -> String
+mejorEstrategia estrategia1 estrategia2 atacante flota 
+    | durabilidadTotal (misionSorpresa estrategia1 atacante flota) > durabilidadTotal (misionSorpresa estrategia2 atacante flota) = "La Estrategia N°1 es mejor"
+    | otherwise = "La Estrategia N°2 es mejor" 
+-- Punto 6 --
+
+-- Punto 7 --
+flotaInfinita :: [Nave]
+flotaInfinita = repeat cazaTIE
+{-No es posible determinar su durabilidad total debido a que se necesita de toda la lista para poder calcular la suma de las durabilidades de cada nave individual pero la lista al no tener fin es imposible
+Cuando se intenta llevar a cabo una misión sorpresa lo que ocurre es que se empiezan a hacer chequeos infinitos según que estrategia y por así decirlo explota el código iterando infinitamente-}
+-- Punto 7 --
+
+-------------- Parcial Star Wars: Haskell Espacial --------------
