@@ -135,6 +135,7 @@ desierto = UnBioma "palo" (repeat "arena")
 -------------- Parcial CraftMine --------------
 
 -------------- Parcial Star Wars: Haskell Espacial --------------
+{-
 data Nave = UnaNave {
     nombre :: String,
     durabilidad :: Number,
@@ -246,5 +247,138 @@ flotaInfinita = repeat cazaTIE
 {-No es posible determinar su durabilidad total debido a que se necesita de toda la lista para poder calcular la suma de las durabilidades de cada nave individual pero la lista al no tener fin es imposible
 Cuando se intenta llevar a cabo una misión sorpresa lo que ocurre es que se empiezan a hacer chequeos infinitos según que estrategia y por así decirlo explota el código iterando infinitamente-}
 -- Punto 7 --
-
+-}
 -------------- Parcial Star Wars: Haskell Espacial --------------
+
+-------------- Parcial Super Mario Bros --------------
+
+-- Punto 1 --
+data Plomero = UnPlomero {
+    nombre :: String,
+    plata :: Number,
+    reparaciones :: [Reparacion],
+    cajaHerramientas :: [Herramienta]
+} deriving Show
+
+data Herramienta = UnaHerramienta {
+    denominacion :: String,
+    precio :: Number,
+    mango :: String
+} deriving Show
+
+llaveInglesa = UnaHerramienta "llave inglesa" 200 "hierro"
+martillo = UnaHerramienta "martillo" 20 "madera"
+llaveFrancesa = UnaHerramienta "llave francesa" 1 "hierro"
+llaveFrancesaInf :: Herramienta -> [Herramienta]
+llaveFrancesaInf herr = herr : llaveFrancesaInf (herr {precio = precio herr + 1})
+destornillador = UnaHerramienta "destornillador" 0 "plastico"
+
+mario :: Plomero
+mario = UnPlomero "Mario" 1200 [] [llaveInglesa, martillo]
+wario :: Plomero
+wario = UnPlomero "Wario" 0.5 [] (llaveFrancesaInf llaveFrancesa)
+-- Punto 1 --
+
+-- Punto 2 --
+tieneHerramienta :: Herramienta -> Plomero -> Bool
+tieneHerramienta herramienta plomero = any (== (denominacion herramienta)) (map denominacion (cajaHerramientas plomero))
+
+esMalvado :: Plomero -> Bool
+esMalvado plomero = "Wa" == take 2 (nombre plomero)
+
+puedeComprar :: Herramienta -> Plomero -> Bool
+puedeComprar herramienta plomero = precio herramienta < plata plomero
+-- Punto 2 --
+
+-- Punto 3 --
+esBuena :: Herramienta -> Bool
+esBuena herramienta = (mango herramienta == "hierro" && precio herramienta > 10000) || (denominacion herramienta == "martillo" && (mango herramienta == "madera" || mango herramienta == "goma"))
+-- Punto 3 --
+
+-- Punto 4 --
+comprar :: Herramienta -> Plomero -> Plomero
+comprar herramienta plomero
+    | puedeComprar herramienta plomero = plomero {plata = plata plomero - precio herramienta, cajaHerramientas = (:) herramienta (cajaHerramientas plomero)}
+    | otherwise = plomero
+-- Punto 4 --
+
+-- Punto 5 --
+data Reparacion = UnaReparacion {
+    descripcion :: String,
+    requerimiento :: Herramienta
+} deriving Show
+
+filtracionAgua = UnaReparacion "AAAAAAA AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" llaveInglesa  -- Para probar
+
+esMayuscula :: Char -> Bool
+esMayuscula char = (char >= 'A' && char <= 'Z') || char == ' '
+
+esUnGrito :: Reparacion -> Bool
+esUnGrito reparacion = all esMayuscula (descripcion reparacion)
+
+esDificil :: Reparacion -> Bool
+esDificil reparacion = length (descripcion reparacion) > 100 && esUnGrito reparacion
+
+presupuesto :: Reparacion -> Number
+presupuesto = (* 3) . length . descripcion
+-- Punto 5 --
+
+-- Punto 6 --
+tieneRequerimiento :: Reparacion -> Plomero -> Bool
+tieneRequerimiento reparacion plomero = any (== (denominacion (requerimiento reparacion))) (map denominacion (cajaHerramientas plomero))
+
+cobrarPresupuesto :: Reparacion -> Plomero -> Number
+cobrarPresupuesto reparacion plomero = plata plomero + presupuesto reparacion
+
+pierdeHerramientasBuenas :: [Herramienta] -> [Herramienta]
+pierdeHerramientasBuenas [] = []
+pierdeHerramientasBuenas (h:hs)
+    | esBuena h = pierdeHerramientasBuenas hs
+    | otherwise = h : pierdeHerramientasBuenas hs
+
+hacerReparacion :: Reparacion -> Plomero -> Plomero
+hacerReparacion reparacion plomero
+    | esMalvado plomero && tieneHerramienta martillo plomero = plomero {plata = cobrarPresupuesto reparacion plomero, reparaciones = (:) reparacion (reparaciones plomero), cajaHerramientas = (:) destornillador (cajaHerramientas plomero)}
+    | tieneRequerimiento reparacion plomero && esDificil reparacion = plomero {plata = cobrarPresupuesto reparacion plomero, reparaciones = (:) reparacion (reparaciones plomero), cajaHerramientas = pierdeHerramientasBuenas (cajaHerramientas plomero)}
+    | tieneRequerimiento reparacion plomero = plomero {plata = cobrarPresupuesto reparacion plomero, reparaciones = (:) reparacion (reparaciones plomero), cajaHerramientas = drop 1 (cajaHerramientas plomero)}
+    | otherwise = plomero {plata = plata plomero + 100}
+-- Punto 6 --
+
+-- Punto 7 --
+jornadaDeTrabajo :: [Reparacion] -> Plomero -> Plomero
+jornadaDeTrabajo reparaciones plomero = foldr hacerReparacion plomero reparaciones
+-- Punto 7 --
+
+-- Punto 8 --
+jornadaEmpresa :: [Reparacion] -> [Plomero] -> [Plomero]
+jornadaEmpresa reparaciones = map (jornadaDeTrabajo reparaciones)
+
+masReparador :: [Plomero] -> Plomero
+masReparador [p] = p
+masReparador (p:py:ps)
+    | length (reparaciones p) > length (reparaciones py) = masReparador (p:ps)
+    | otherwise = masReparador (py:ps)
+
+empleadoMasReparador :: [Reparacion] -> [Plomero] -> Plomero
+empleadoMasReparador reparaciones plomeros = masReparador (jornadaEmpresa reparaciones plomeros)
+
+masAdinerado :: [Plomero] -> Plomero
+masAdinerado [p] = p
+masAdinerado (p:py:ps)
+    | plata p > plata py = masAdinerado (p:ps)
+    | otherwise = masAdinerado (py:ps)
+
+empleadoMasAdinerado :: [Reparacion] -> [Plomero] -> Plomero
+empleadoMasAdinerado reparaciones plomeros = masAdinerado (jornadaEmpresa reparaciones plomeros)
+
+masInversion :: [Plomero] -> Plomero
+masInversion [p] = p
+masInversion (p:py:ps)
+    | sum (map precio (cajaHerramientas p)) > sum (map precio (cajaHerramientas py)) = masInversion (p:ps)
+    | otherwise = masInversion (py:ps)
+
+empleadoMasInversion :: [Reparacion] -> [Plomero] -> Plomero
+empleadoMasInversion reparaciones plomeros = masInversion (jornadaEmpresa reparaciones plomeros)
+-- Punto 8 --
+
+-------------- Parcial Super Mario Bros --------------
